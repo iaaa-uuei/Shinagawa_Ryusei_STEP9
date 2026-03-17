@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+        <h2 class="page-title">
             商品一覧
         </h2>
     </x-slot>
@@ -8,47 +8,86 @@
     <div class="page-section-sm">
         <div class="container-main">
             <div class="card">
-                <table class="table-common table-fixed-layout">
+
+                {{-- 検索フォーム --}}
+                <form method="GET" action="{{ route('product.index') }}" class="product-search-form">
+                    <input
+                        type="text"
+                        name="keyword"
+                        value="{{ request('keyword') }}"
+                        placeholder="商品名を入力"
+                        class="search-input search-keyword"
+                    >
+
+                    <input
+                        type="number"
+                        name="min_price"
+                        value="{{ request('min_price') }}"
+                        placeholder="最低価格"
+                        class="search-input search-price"
+                    >
+
+                    <span class="search-separator">〜</span>
+
+                    <input
+                        type="number"
+                        name="max_price"
+                        value="{{ request('max_price') }}"
+                        placeholder="最高価格"
+                        class="search-input search-price"
+                    >
+
+                    <button type="submit" class="button-search">
+                        検索
+                    </button>
+                </form>
+
+                {{-- 一覧テーブル --}}
+                <table class="product-table">
                     <thead>
                         <tr>
-                            <th class="table-head-cell">商品ID</th>
-                            <th class="table-head-cell">商品名</th>
-                            <th class="table-head-cell">商品画像</th>
-                            <th class="table-head-cell">会社</th>
-                            <th class="table-head-cell">出品者</th>
-                            <th class="table-head-cell">価格</th>
-                            <th class="table-head-cell">在庫</th>
+                            <th class="product-th">商品番号</th>
+                            <th class="product-th">商品名</th>
+                            <th class="product-th">商品説明</th>
+                            <th class="product-th product-image-col">画像</th>
+                            <th class="product-th">料金(￥)</th>
+                            <th class="product-th product-detail-col"></th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($products as $product)
-                            <tr>
-                                <td class="table-body-cell">{{ $product->id }}</td>
-                                <td class="table-body-cell">{{ $product->product_name }}</td>
-                                <td class="table-body-cell">
+                        @forelse ($products as $product)
+                            <tr class="product-row">
+                                <td class="product-td">{{ $product->id }}</td>
+                                <td class="product-td">{{ $product->product_name }}</td>
+                                <td class="product-td">{{ $product->description }}</td>
+                                <td class="product-td product-image-col">
                                     @if($product->img_path)
-                                        <img src="{{ asset('storage/' . $product->img_path) }}" alt="商品画像" class="image-thumb">
+                                        <img
+                                            src="{{ asset('storage/' . $product->img_path) }}"
+                                            alt="商品画像"
+                                            class="product-table-image"
+                                        >
                                     @else
-                                        画像無し
+                                        <span class="muted-text">画像無し</span>
                                     @endif
                                 </td>
-                                <td class="table-body-cell">{{ $product->company?->company_name }}</td>
-                                <td class="table-body-cell">{{ $product->user?->name_kanji }}</td>
-                                <td class="table-body-cell">{{ $product->price }}</td>
-                                <td class="table-body-cell">{{ $product->stock }}</td>
-                                <td class="table-body-cell-wide">
+                                <td class="product-td">{{ $product->price }}</td>
+                                <td class="product-td product-detail-col">
                                     <a href="{{ route('product.show', $product->id) }}" class="button-green">
                                         詳細
                                     </a>
                                 </td>
                             </tr>
-                        @endforeach
+                        @empty
+                            <tr>
+                                <td colspan="6" class="table-empty">
+                                    表示できる商品はありません
+                                </td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
 
-                @if($products->isEmpty())
-                    <p class="mt-section">表示できる商品はありません</p>
-                @endif
             </div>
         </div>
     </div>

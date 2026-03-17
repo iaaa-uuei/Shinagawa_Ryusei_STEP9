@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
+use App\Http\Requests\StoreProductRequest;
 
 class PurchaseController extends Controller
 {
@@ -17,34 +18,25 @@ class PurchaseController extends Controller
         return view('purchase.create', compact('product'));
     }
 
-    public function store(Request $request, Product $product): RedirectResponse
+    public function store(StoreProductRequest $request, Product $product): RedirectResponse
     {
-        $request->validate([
-            'quantity' => ['required', 'integer', 'min:1'],
+        
+
+        if($request->quantity > $product->stock){
+            return back()
+                ->withErrors(['quantity' => '在庫数を超えて購入することは出来ません。'])
+                ->withInput();
+        }
+
+        //購入履歴
+        Sale::create([
+            'user_id' => auth()->id(),
+            'product_id' => $product->id,
+            'quantity' => $request->quantity,
         ]);
 
-        $userId = auth()->id();
-        $qty = (int)$request->quantity;
+        $product->decrement('stock', $request->quantity);
 
-        DB::transaction(function() use ($product, $userId, $qty){
-            //競合対策：この商品行をロック
-            $locked = Product::where('id', $product->id)->lockForUpdate()->first();
-
-            if($locked->stock < $qty){
-                abort(422, '在庫が足りません');
-            }
-
-            //購入履歴
-            Sale::create([
-                'user_id' => $userId,
-                'product_id' => $locked->id,
-                'quantity' => $qty,
-            ]);
-
-            //在庫減らす
-            $locked->decrement('stock', $qty);
-        });
-
-        return redirect()->route('product.show', $product)->with('status','購入しました');
+        return redirect()->route('product.index')->with('status','購入しました');
     }
 }

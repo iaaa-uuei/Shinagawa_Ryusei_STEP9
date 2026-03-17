@@ -3,9 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Mail\ContactMail;
-use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Mail;
+use App\Http\Requests\StoreContactRequest;
+use Illuminate\Support\Facades\Log;
 
 class ContactController extends Controller
 {
@@ -14,20 +15,24 @@ class ContactController extends Controller
         return view('contact.create');
     }
 
-    public function store(Request $request)
+    public function store(StoreContactRequest $request)
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255'],
-            'subject' => ['required', 'string', 'max:255'],
-            'message' => ['required', 'string', 'max:2000'],
-        ]);
+        try{
+        
+            $validated = $request->validated();
 
-        Mail::to('tanaka@example.com')->send(
-            new ContactMail($validated)
-        );
+            Mail::to('tanaka@example.com')->send(
+                new ContactMail($validated)
+            );
 
-        return redirect()->back()->with('success', '送信しました');
+            return redirect()->route('contact.thanks')->with('status', '送信しました。');
+        } catch(\Exception $e){
+            Log::error($e);
+
+            return redirect()
+                ->back()
+                ->with('error', '送信に失敗しました');
+        }
     }
 
     public function thanks(): View

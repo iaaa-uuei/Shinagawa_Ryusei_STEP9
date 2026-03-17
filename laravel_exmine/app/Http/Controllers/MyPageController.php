@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdateProductRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use App\Models\Product;
 use Illuminate\View\View;
+use App\Http\Requests\StoreProductRequest;
+use Illuminate\Support\Facades\Log;
 
 class MyPageController extends Controller
 {
@@ -46,40 +49,55 @@ class MyPageController extends Controller
         return view('mypage.products.edit', compact('product'));
     }
 
-    public function update(Request $request, Product $product)
+    public function update(UpdateProductRequest $request, Product $product)
     {
-        abort_unless($product->user_id === auth()->id(), 403);
+        try{
+            abort_unless($product->user_id === auth()->id(), 403);
 
-        $validated = $request->validate([
-            'product_name' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'max:1000'],
-            'price' => ['required', 'integer', 'min:0'],
-            'stock' => ['required', 'integer', 'min:0'],
-            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-        ]);
+            $imagePath = $product->img_path;
 
-        if($request->hasFile('image')){
-            $imagePath = $request->file('image')->store('products', 'public');
-            $validated['img_path'] = $imagePath;
+            if($request->hasFile('image')){
+                $imagePath = $request->file('image')->store('products', 'public');
+            }
+
+            $product->update([
+                'product_name' => $request->product_name,
+                'description' => $request->description,
+                'price' => $request->price,
+                'stock' => $request->stock,
+                'img_path' => $imagePath,
+            ]);
+
+            return redirect()
+                ->route('mypage.products.show', $product)
+                ->with('status', '更新しました');
+        } catch(\Exception $e){
+            Log::error($e);
+
+            return redirect()
+                ->back()
+                ->with('error', '更新に失敗しました。');
         }
-
-        $product->update($validated);
-
-        return redirect()
-            ->route('mypage.products.show', $product)
-            ->with('status', '更新しました');
     }
 
     public function destroy(Product $product): RedirectResponse
     {
-        //自分の商品以外は消せない
-        abort_unless($product->user_id === auth()->id(), 403);
+        try{
+            //自分の商品以外は消せない
+            abort_unless($product->user_id === auth()->id(), 403);
 
-        $product->delete();
+            $product->delete();
 
-        return redirect()
-            ->route('mypage.index')
-            ->with('status', '削除しました');
+            return redirect()
+                ->route('mypage.index')
+                ->with('status', '削除しました');
+        } catch(\Exception $e){
+            Log::error($e);
+
+            return redirect()
+                ->back()
+                ->with('error', '削除に失敗しました。');
+        }
     }
 
     public function create(): View
@@ -87,35 +105,34 @@ class MyPageController extends Controller
         return view('mypage.products.create');
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreProductRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'product_name' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'max:1000'],
-            'price' => ['required', 'integer', 'min:0'],
-            'stock' => ['required', 'integer', 'min:0'],
-            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-        ]);
+        try{
+            $user = auth()->user();
 
-        $user = auth()->user();
+            $imagePath = null;
+            if($request->hasFile('image')){
+                $imagePath = $request->file('image')->store('products', 'public');
+            }
 
-        $imagePath = null;
-        if($request->hasFile('image')){
-            $imagePath = $request->file('image')->store('products', 'public');
+            Product::create([
+                'user_id' => $user->id,
+                'product_name' => $request->product_name,
+                'description' => $request->description,
+                'price' => $request->price,
+                'stock' => $request->stock,
+                'img_path' => $imagePath,
+            ]);
+
+            return redirect()
+                ->route('mypage.index')
+                ->with('status', '商品を登録しました。');
+        } catch(\Exception $e){
+            Log::error($e);
+
+            return redirect()
+                ->back()
+                ->with('error', '商品登録に失敗しました。');
         }
-
-        Product::create([
-            'user_id' => $user->id,
-            'company_id' => $user->company_id,
-            'product_name' => $validated['product_name'],
-            'description' => $validated['description'],
-            'price' => $validated['price'],
-            'stock' => $validated['stock'],
-            'img_path' => $imagePath,
-        ]);
-
-        return redirect()
-            ->route('mypage.index')
-            ->with('status', '商品を登録しました');
     }
 }

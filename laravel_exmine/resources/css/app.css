@@ -333,3 +333,59 @@
 .nav-inline {
     @apply inline;
 }
+
+.page-title {
+    @apply font-semibold text-xl text-gray-800 leading-tight;
+}
+
+.product-search-form {
+    @apply flex items-center justify-center gap-8 mb-12 flex-wrap;
+}
+
+.search-input {
+    @apply border border-gray-300 rounded-lg px-4 py-3 text-lg bg-white;
+}
+
+.search-keyword {
+    @apply w-[360px];
+}
+
+.search-price {
+    @apply w-[220px];
+}
+
+.search-separator {
+    @apply text-3xl text-gray-700;
+}
+
+.button-search {
+    @apply px-6 py-3 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition;
+}
+
+.product-table {
+    @apply min-w-full text-left border-collapse;
+}
+
+.product-th {
+    @apply py-4 px-3 text-2xl font-semibold text-gray-900 border-b border-gray-300;
+}
+
+.product-td {
+    @apply py-3 px-3 text-xl text-gray-900 border-b border-gray-200 align-middle;
+}
+
+.product-row {
+    @apply bg-white;
+}
+
+.product-image-col {
+    @apply text-center;
+}
+
+.product-detail-col {
+    @apply text-center;
+}
+
+.product-table-image {
+    @apply w-14 h-14 object-cover inline-block;
+}
